@@ -84,6 +84,3 @@ python main.py --mode predict \
     --max_words 128 \
     --max_span_len 12
 ```
-
-## Citation
-> Paper under review.
