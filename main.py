@@ -52,8 +52,6 @@ def build_parser():
     p.add_argument("--e_thr", type=float, default=0.99)
     p.add_argument("--type_mode", type=str, default="full", choices=["full", "hybrid"])
     p.add_argument("--type_conf_thr", type=float, default=0.9)
-    # p.add_argument("--limit", type=int, default=None,
-    #                help="test nhanh")
     return p
 
 
@@ -99,13 +97,12 @@ def run_train(cfg, model, tok, tr_ds, va_ds, te_ds, device):
                       e_thr=cfg.e_thr, type_mode=cfg.type_mode,
                       type_conf_thr=cfg.type_conf_thr)
     print_report(cfg.task, report)
-    if not cfg.no_save:
-        out_jsonl = os.path.join(cfg.out_dir, "inference_output.jsonl")
-        save_inference(model, te_ds, device, out_jsonl, tok, task=cfg.task,
-                       max_spans=None, max_span_len=cfg.max_span_len,
-                       s_thr=cfg.s_thr, e_thr=cfg.e_thr,
-                       type_mode=cfg.type_mode, type_conf_thr=cfg.type_conf_thr,
-                       write_metrics=True)
+    out_jsonl = os.path.join(cfg.out_dir, "inference_output.jsonl")
+    save_inference(model, te_ds, device, out_jsonl, tok, task=cfg.task,
+                   max_spans=None, max_span_len=cfg.max_span_len,
+                   s_thr=cfg.s_thr, e_thr=cfg.e_thr,
+                   type_mode=cfg.type_mode, type_conf_thr=cfg.type_conf_thr,
+                   write_metrics=True)
     return report
 
 
@@ -125,7 +122,7 @@ def run_predict(cfg, model, te_ds, device):
     if cfg.ckpt:
         model.load_state_dict(torch.load(cfg.ckpt, map_location=device))
     model.eval()
-    n = min(len(te_ds), cfg.limit or len(te_ds))
+    n = len(te_ds)
     for i in range(n):
         item = te_ds[i]
         blocks, spans, _, _ = predict(model, item, device, max_spans=None,
@@ -163,10 +160,6 @@ def main():
           % (device, cfg.task, parse_dep_feats(cfg.dep_feats), cfg.data_base))
 
     train_data, dev_data, test_data = load_splits(cfg.data_base)
-    if cfg.limit:
-        train_data = train_data[:cfg.limit]
-        dev_data = dev_data[:cfg.limit]
-        test_data = test_data[:cfg.limit]
     rel2id, id2rel, cat2id, id2cat, sent2id, id2sent = build_label_maps(train_data, "pair_grid")
     tr_ds, va_ds, te_ds, tok = load_data(cfg, cat2id, sent2id,
                                          train_data, dev_data, test_data)
